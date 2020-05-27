@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
+
 int main(int argc,char **argv)
 {
     int count;
@@ -28,26 +29,25 @@ int main(int argc,char **argv)
     for(i = 1;i < count;i++)
     {
          pid= fork();
-         if(pid < 0)
+         if(pid < 0)//创建子进程失败
          {
              perror("fork error");
              exit(1);
          }
-         else if(pid == 0)
+         else if(pid > 0)
          {
-            //  printf("pid : %d,ppid : %d \n",getpid(),getppid());
-             break;//子进程退出循环，父进程继续做循环
+            // wait(NULL);
+            // printf("pid : %d,ppid : %d \n",getpid(),getppid());
+             break;//父进程退出循环，子进程继续做循环
          }
     }
 
     if(pid > 0)
     {
          int a;
-         sleep(1);
          wait(&a);
     }
-
-    printf("pid : %d,ppid : %d \n",getpid(),getppid());
+   printf("pid : %d,ppid : %d \n",getpid(),getppid());
 
     exit(0);
     //return 0;

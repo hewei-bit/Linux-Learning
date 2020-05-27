@@ -7,7 +7,7 @@
 输入4，逆序打印链表中每位同学的信息
 输入5，退出程序
 
-时间：2020-4-22 
+时间：2020-4-23 
 **************************/
 
 #include <stdio.h>
@@ -32,7 +32,7 @@ STUNODE init_node(void)
         return NULL;
     }
     memset(head,0,sizeof(StuNode));
-    head->next = NULL;
+    head->next = head;
     return head;
 }
 
@@ -50,6 +50,7 @@ STUNODE new_node(char *name,int id,int age )
     strcpy(new->name,name);
     new->next = NULL;
 }
+
 //查找节点
 STUNODE search_node(STUNODE head, int id)
 {
