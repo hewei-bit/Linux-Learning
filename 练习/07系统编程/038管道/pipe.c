@@ -39,11 +39,7 @@ int main()
             ret = write(pipefd[1],"123456",6);
             num += ret;
             printf("num: %d \n",num);
-
-
-
             printf("my pid : %d write over \n",getpid());
-            
         }
         //等待子进程
         // wait(NULL);

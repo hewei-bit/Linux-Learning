@@ -72,6 +72,7 @@ int main(int argc,char**argv)
 		semop(sem_id, op, 1);
 		
 		printf("addr:%c\n", *addr);
+        sleep(1);
 		
 		/* 释放空间资源 V操作 */
 		op[0].sem_num = SPACE;			//代表操作信号量中的第1个元素

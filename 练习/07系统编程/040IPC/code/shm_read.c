@@ -29,24 +29,27 @@ int main(int argc,char**argv)
 
     //映射共享内存
     char *addr =  shmat(shm_id,NULL,0);
-    bzero(addr, 1024);
-	strcpy(addr, "123456");
 
-    
 
-    sleep(5);
-    char i = 0;
+    //读取共享内存消息
     while (1)
     {
-        *addr = ++i;
+        printf("addr:%s\n", addr);
 		sleep(1);
-		if(i == 10)
+		if(*addr == 10)
 			break;
     }
 
+    //获取内存属性
+    struct shmid_ds info;
+    shmctl(shm_id,IPC_STAT,&info);
+    printf("%s \n",ctime(&info.shm_ctime));
+    
+    //解除映射
     shmdt(addr);
 
     //删除共享内存
+    shmctl(shm_id,IPC_RMID,NULL);
 
     return 0;
 }

@@ -47,7 +47,7 @@ int main(void)
 		printf("ret:%d\n", ret);
 		printf("buf:%s\n", buf);
 	}
-	
+	//关闭文件
 	close(fifo_fd);
 	
 	return 0;

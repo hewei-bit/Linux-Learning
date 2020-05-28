@@ -55,13 +55,13 @@ STUNODE new_node(char *name,int id,int age )
 STUNODE search_node(STUNODE head, int id)
 {
     STUNODE p = head->next;
-    while (p)
+    while (p != head)
     {
         if(p->id == id)
             break;
         p = p->next;
     }
-    return p;   
+    return NULL;   
 }
 
 //删除节点
@@ -82,29 +82,32 @@ STUNODE del_node(STUNODE head,int id)
 //尾插
 int tail_insert(STUNODE head, STUNODE new)
 {
-    STUNODE p =head->next;
-    while(p->next)
+    STUNODE p =head;
+    while(p->next != head)
         p = p->next;
 
     p->next = new;
+    new->next = head;
     return 0;
 }
 
 //按学号插入链表
 int insert_node(STUNODE head,STUNODE new)
 {
-    if(head->next == NULL)
+    if(head->next == head)
     {
         head->next = new;
+        new->next = head;
         return 0;
     }
     STUNODE p = head->next;
     STUNODE k = head;
     while(p->id <= new->id)
     {
-        if(p->next == NULL)
+        if(p->next == head)
         {
             p->next = new;
+            new->next = head;
             return 0;
         }
         p = p->next;
@@ -122,21 +125,21 @@ int insert_node(STUNODE head,STUNODE new)
 int sort_id_node(STUNODE head)
 {
     /* 链表中没有节点和只有一个节点时不需要排序 */
-	if(!head->next)
+	if(head->next == head)
 		return -1;
-	if(!head->next->next)
+	if(head->next->next ==head)
 		return -2;
 	
 	STUNODE p = head->next;
 	STUNODE k = p->next;
     int min_id =0;
     //先求最小值
-    while(k)
+    while(k != head)
     {
         if(p->id > k->id)
             p = k;
         k = k->next;
-        if(k == NULL)
+        if(k == head)
             min_id = p->id;
     }
     p = del_node(head,p->id);
@@ -151,8 +154,7 @@ int sort_id_node(STUNODE head)
             if(p->id > k->id)
                 p = k;
             k = k->next;
-            if(k == NULL)
-                min_id = p->id;
+            
         }
         p = del_node(head,p->id);
         tail_insert(head,p);
@@ -168,17 +170,17 @@ int sort_id_node(STUNODE head)
 int sort_id_data(STUNODE head)
 {
 	/* 链表中没有节点和只有一个节点时不需要排序 */
-	if(!head->next)
+	if(head->next == head)
 		return -1;
-	if(!head->next->next)
+	if(head->next->next == head)
 		return -2;
 	
 	STUNODE p = head->next;
 	STUNODE k = p->next;
 	
-	while(p->next)
+	while(p->next != head)
 	{
-		while(k)
+		while(k != head)
 		{
 			if(p->id > k->id)
 			{
@@ -202,12 +204,15 @@ int sort_id_data(STUNODE head)
 } 
 
 //倒序打印
-void show_reverse(STUNODE head)
+void show_reverse(STUNODE head,STUNODE p)
 {
-    if(head->next != NULL)
-        show_reverse(head->next);
-    if(head->name[0] != 0)
-        printf("学号:%5d 姓名: %5s年龄:%5d \n",head->id,head->name,head->age);
+    if(p != head)
+    {
+        show_reverse(head,p->next);
+
+        printf("学号:%5d 姓名: %5s年龄:%5d \n",p->id,p->name,p->age);
+    }
+        
 }
 
 
@@ -216,7 +221,7 @@ void show_reverse(STUNODE head)
 void show(STUNODE head)
 {
     STUNODE p = head->next;
-    while(p)
+    while(p != head)
     {
         printf("学号:%5d 姓名: %5s年龄:%5d \n \n",p->id,p->name,p->age);
         p = p->next;
@@ -266,11 +271,11 @@ int main()
             show(head);
             break;
         case 3:
-            sort_id_node(head);
+            sort_id_data(head);
             show(head);
             break;
         case 4:
-            show_reverse(head);
+            show_reverse(head,head->next);
             break;
         case 5:
             return 0;

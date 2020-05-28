@@ -64,6 +64,7 @@ int main(int argc,char**argv)
     // arg.val = 0;//代表无数据
     // semctl(sem_id,DATA,SETVAL,arg);
 
+
     while (1)
     {
         /* 申请空间资源 P操作 */
@@ -75,8 +76,12 @@ int main(int argc,char**argv)
 		
 		
 		*addr = arr[i++];
-		if(i == 4)
-			i=0;
+
+        if(i == 4)
+            i=0;
+            sleep(1);
+        
+        
 		
 		/* 释放数据资源 V操作 */
 		op[0].sem_num = DATA;		//代表操作信号量中的第2个元素
@@ -84,10 +89,10 @@ int main(int argc,char**argv)
 		op[0].sem_flg = 0;			//默认
 		semop(sem_id, op, 1);
     }
-
+    //共享内存
     shmdt(addr);
 
-    //删除共享内存
+    
 
     return 0;
 }

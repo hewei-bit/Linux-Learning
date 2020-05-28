@@ -1,42 +1,53 @@
-#include <sys/types.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
 #include <signal.h>
 
 void fun(int sig)
 {
-    printf("pid: %d.sig:%d \n",getpid(),sig);
+	printf("pid:%d, sig:%d\n", getpid(), sig);
 }
 
-int main()
+
+/* 父进程给子进程发送信号 */
+int main(void)
 {
-
-        signal(SIGUSR1,fun);
-        signal(SIGUSR2,fun);
-        signal(SIGINT,fun);
-
-        sigset_t set;
-        sigemptyset(&set);
-        sigaddset(&set,SIGUSR2);
-        sigaddset(&set,SIGUSR1);
-        sigaddset(&set,SIGINT);
-
-        sigprocmask(SIG_BLOCK,&set,NULL);
-
-        raise(SIGUSR2);
-        raise(SIGUSR1);
-        raise(SIGINT);
-        printf("send signal err \n");
-
-        sleep(2);
-
-        sigprocmask(SIG_UNBLOCK,&set,NULL);
-
-
-        sleep(2);
-
-
+	int i = 1;
+	
+	/* 将信号加进一个信号集  */
+	sigset_t set;
+	sigemptyset(&set);	//清空信号集
+	
+	for(i; i<65; i++)
+	{
+		if(i == 32 || i == 33 || i == 9 || i == 19)
+			continue;
+		
+		signal(i, fun);
+		sigaddset(&set, i);
+	}
+	
+	/* 将信号集中的信号设置阻塞 */
+	sigprocmask(SIG_BLOCK, &set, NULL);
+	
+	for(i=1; i<65; i++)
+	{
+		if(i == 32 || i == 33 || i == 9 || i == 19)
+			continue;
+		
+		raise(i);
+	}
+	
+	printf("send signal over\n");
+	
+	sleep(2);
+	
+	/* 解除阻塞 */
+	sigprocmask(SIG_UNBLOCK, &set, NULL);
+	
+	sleep(2);
+	
+	return 0;
 }
