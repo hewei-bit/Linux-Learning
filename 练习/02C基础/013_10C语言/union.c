@@ -13,7 +13,6 @@ union Un
 {
     int a;
     char b;
-
 };
 int IsLittleEnd1()
 {
