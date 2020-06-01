@@ -21,7 +21,7 @@ int IsLittleEnd1()
     if (u.b==0x1)
     {
         printf("小端 \n");
-    return 1; //小端
+        return 1; //小端
     }
     return 0; //大端
 }
