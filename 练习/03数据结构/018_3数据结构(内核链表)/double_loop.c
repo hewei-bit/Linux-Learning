@@ -5,130 +5,145 @@
 #include<stdlib.h> 
 #include<string.h> 
 
-struct node
+/* 结构体模板定义  */
+struct node 
 {
-    int data;
-    struct node *next;
-    struct node *prev;
+	int data;
+	struct node *next;
+	struct node *prve;
 };
-typedef struct node *NODE;
-typedef struct node Node;
-//初始化
-NODE init_list(void)
+
+struct node1 
 {
-    NODE head = malloc(sizeof(Node));
-    if(NULL == head)
-    {
-        printf("堆内存申请失败\n");
-        return NULL;
-    }
-    head->next = head->prev = head;
-    return head;
+	float data;
+	struct node1 *next;
+	struct node1 *prve;
+};
+
+/* 初始化一个带有头节点的链表 */
+struct node *init_list(void)
+{
+	struct node *head = malloc(sizeof(struct node));
+	if(!head)
+	{
+		printf("堆内存申请失败！\n");
+		return NULL;
+	}
+	
+	head->next = head->prve = head;
+
+	return head;
 }
 
-//建立新节点
-NODE new_node(int data)
+/* 新建节点 */
+struct node *new_node(int data)
 {
-    NODE new = malloc(sizeof(Node));
-    if(NULL == new)
-    {
-        printf("堆内存申请失败\n");
-        return NULL;
-    }
-    new->data = data;
-    new->next = NULL;
-    new->prev = NULL;
-    return new;
-}
-//将新节点插入p之后
-void ins_next(NODE p,NODE new)
-{
-    new->prev = p;
-    new->next = p->next;
-    p->next = new;
-    new->next->prev = new;
-}
-//查找节点
-NODE find_node(NODE head,int data)
-{
-    NODE p = head->next;
-    while(p != head)
-    {
-        if(p->data == data)
-            return p;
-        p = p->next;
-    }
-    return NULL;
-}
-//删除节点
-NODE del_node(NODE p)
-{
-    p->prev->next = p->next;
-    p->next->prev = p->prev;
-    p->next = p->prev = NULL;
-    return p;
-} 
-//移动节点.将src移动至dest之后
-int mv_node(NODE head,int src,int dest)
-{
-    NODE k = find_node(head,dest);
-    if(k == NULL)
-    {
-        printf("目标节点不存在! \n");
-        return -1;
-    }
-    NODE p = find_node(head,dest);
-    if(p == NULL)
-    {
-        printf("目标节点不存在! \n");
-        return -2;
-    }
-
-    p = del_node(p);
-    ins_next(k,p);
-    return 0;
-}
-//遍历链表
-void show(NODE head)
-{
-    NODE p = head->next;
-    while(p != head)
-    {
-        printf("data: %d \n",p->data);
-        p=p->next;
-    }
+	struct node *new = malloc(sizeof(struct node));
+	if(!new)
+	{
+		printf("堆内存申请失败！\n");
+		return NULL;
+	}
+	
+	new->next = new->prve = NULL;
+	new->data = data;
+	return new;
 }
 
-int main()
+/* 将新节点插入到任意节点之后 */
+void ins_next(struct node *p, struct node *new)
 {
+	new->prve = p;
+	new->next = p->next;
+	p->next = new;
+	new->next->prve = new;
+}
 
 
-    NODE head = init_list();
-    if(head == NULL)
-    {
-        return -1;
-    }
+/* 查找节点 */
+struct node *find_node(struct node *head, int data)
+{
+	struct node *p = head->next;
+	while(p != head)
+	{
+		if(p->data == data)
+			return p;
+		p = p->next;
+	}
+	
+	return NULL;	
+}
 
-    NODE new = new_node(10);
-    if(new ==NULL)
-        return -1;
-    ins_next(head,new);
 
+/* 删除链表中的节点 */
+struct node *del_node(struct node *p)
+{
+	p->prve->next = p->next;
+	p->next->prve = p->prve;
+	p->next = p->prve = NULL;
+	
+	return p;
+}
 
-    new = new_node(20);
-    if(new ==NULL)
-        return -1;
-    ins_next(head,new);
+/* 移动节点,将值为src的节点移动到值为dest的节点之后 */
+int mv_node(struct node *head, int src, int dest)
+{
+	struct node *k = find_node(head, dest);
+	if(k == NULL)
+	{
+		printf("目标节点不存在！\n");
+		return -1;
+	}
+	
+	struct node *p = find_node(head, src);
+	if(p == NULL)
+	{
+		printf("要移动的节点不存在！\n");
+		return -2;
+	}
+	p = del_node(p);
+	
+	ins_next(k , p);
+	
+	return 0;
+}
 
-    new = new_node(30);
-    if(new ==NULL)
-        return -1;
-    ins_next(head,new);
+/* 遍历链表 */
+void show(struct node *head)
+{
+	struct node *p = head->next;
+	while(p != head)
+	{
+		printf("data:%d\n", p->data);
+		p = p->next;
+	}
+}
 
-    show(head);
-    
+int main(int argc, char *argv[]) 
+{ 
+	struct node *head = init_list();
+	if(head == NULL)
+		return -1;
 
-    int ret = mv_node(head, 20, 30);
+	struct node *new = new_node(10);
+	if(new == NULL)
+		return -1;
+	ins_next(head, new);
+	
+
+	new = new_node(20);
+	if(new == NULL)
+		return -1;
+	ins_next(head->next, new);
+	
+	new = new_node(30);
+	if(new == NULL)
+		return -1;
+	ins_next(head->next, new);
+	
+	show(head);
+	
+	int ret = mv_node(head, 20, 10);
 	if(ret == 0)
 		show(head);
 	

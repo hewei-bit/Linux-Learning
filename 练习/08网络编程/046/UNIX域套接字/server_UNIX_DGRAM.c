@@ -4,13 +4,13 @@
 #include <sys/types.h>         
 #include <sys/socket.h>
 #include <arpa/inet.h>
-
+#include <sys/un.h>
 
 int main(void)
 {
 	
-	/* 创建 套接字 */
-	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	/* 创建 UNIX域套接字 */
+	int socket_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
 	if(socket_fd == -1)
 	{
 		perror("socket");
@@ -18,16 +18,10 @@ int main(void)
 	}
 	
 	/* 绑定IP地址和端口号 */
-	struct sockaddr_in server_addr;
+	struct sockaddr_un server_addr;
 	bzero(&server_addr, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(50002);
-	// 1、inet_addr
-	server_addr.sin_addr.s_addr = inet_addr("192.168.3.166");
-	//2、inet_aton
-	//inet_aton("192.168.3.166", &server_addr.sin_addr);
-	//3、INADDR_ANY  代表主机的所有IP地址
-	// server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sun_family = AF_LOCAL;
+	strcpy(server_addr.sun_path,"/home/hewei");
 	int ret = bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
 	if(ret == -1)
 	{
