@@ -55,7 +55,7 @@ void SaveStuToFile()
 //读取文件中学生的信息
 void ReadstuFromFile()
 {
-    	FILE* pFile = fopen("dat.txt", "rb+"); //
+    FILE* pFile = fopen("dat.txt", "rb+"); //
 
 	char strBuf[30] = {0};
 

@@ -9,13 +9,15 @@
 int main(void)
 {
 	
-	/* 创建 UNIX域套接字 */
-	int socket_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
+	/* 创建 套接字 */
+	int socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if(socket_fd == -1)
 	{
 		perror("socket");
 		return -1;
 	}
+	int on = 1;
+	setsockopt(socket_fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
 	
 	/* 绑定IP地址和端口号 */
 	struct sockaddr_un server_addr;
@@ -58,7 +60,8 @@ int main(void)
 		char buf_write[10] = {0};
 		printf("to client:");
 		scanf("%s", buf_write);
-		ret = write(cfd_1, buf_write, 10);
+		// ret = write(cfd_1, buf_write, 10);
+        ret = send(cfd_1,buf_write,10,0);
 		if(ret == -1)
 		{
 			perror("write");
@@ -68,7 +71,8 @@ int main(void)
 		printf("%d\n", __LINE__);
 		
 		char buf[10] = {0};
-		ret = read(cfd_1, buf, 10);
+		// ret = read(cfd_1, buf, 10);
+        ret = recv(cfd_1, buf, 10,0);
 		if(ret == -1)
 		{
 			perror("read");

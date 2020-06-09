@@ -7,9 +7,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-int main() 
+struct sockaddr_in clint_addr;
+
+
+int main(void)
 {
-    /* 创建 套接字 */
+	
+	/* 创建 套接字 */
 	int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if(socket_fd == -1)
 	{
@@ -23,9 +27,9 @@ int main()
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(50002);
 	// 1、inet_addr
-	//server_addr.sin_addr.s_addr = inet_addr("192.168.3.168");
+	//server_addr.sin_addr.s_addr = inet_addr("192.168.14.203");
 	//2、inet_aton
-	//inet_aton("192.168.3.168", &server_addr.sin_addr);
+	//inet_aton("192.168.14.203", &server_addr.sin_addr);
 	//3、INADDR_ANY  代表主机的所有IP地址
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	int ret = bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
@@ -35,23 +39,24 @@ int main()
 		return -1;
 	}
 	printf("bind sucess\n");
+	
 
-    //定义send
-    char buf[10] = {0};
-    struct sockaddr_in send_addr;
-    socklen_t len = sizeof(send_addr);
-    while(1)
-    {
-        //数据收发
-        bzero(buf,10);
-        recvfrom(socket_fd,buf,10,0,(struct sockaddr *)&send_addr,&len);
-        printf("from [%s:%d]:%s \n ",inet_ntoa(send_addr.sin_addr),ntohs(send_addr.sin_port),buf);
-
-    }
-
-    //关闭套接字
-    shutdown(socket_fd,2);
-
-    return 0;
+	char buf[10];
+	struct sockaddr_in send_addr;
+	socklen_t size = sizeof(send_addr);
+	while(1)
+	{
+		/* 数据收发 */
+		bzero(buf, 10);
+		recvfrom(socket_fd, buf, 10, 0, (struct sockaddr *)&send_addr, &size);
+		printf("form [%s:%d]:%s\n", inet_ntoa(send_addr.sin_addr), ntohs(send_addr.sin_port), buf);
+	}
+	
+	
+	/* 关闭套接字文件描述符 */
+	shutdown(socket_fd, 2);
+	
+	
+	return 0;
 }
 
