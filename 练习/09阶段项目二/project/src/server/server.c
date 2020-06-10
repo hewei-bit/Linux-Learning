@@ -218,7 +218,7 @@ int main(int argc, char **argv)
                     
                 }
 
-				if(strncmp(msg, "exit", 4) == 0)//客户端下线
+				if(strncmp(msg, "goodbye", 7) == 0)//客户端下线
 				{
 
                     //广播下线
@@ -229,8 +229,6 @@ int main(int argc, char **argv)
 					close(temp->accept_fd);
 					list_del(&temp->list);
 					printf("[%s][%s-->%u] 正在下线\n",temp->username, temp->ip, temp->port);
-
-                    //广播下线
                  
                 }
 
@@ -247,7 +245,8 @@ int main(int argc, char **argv)
                     bzero(name_buf,20);
                     bzero(file_buf,20);
 
-                    for(int i = 0;msg[i] != '\0' ;i++)
+                    //分析用户名和文件名
+                    for(int i = 0;msg[i] != '\r' ;i++)
                     {
                         if(0 == nCount)
                         {
@@ -281,7 +280,39 @@ int main(int argc, char **argv)
                         printf("%s\n",name_buf);
                         printf("%s\n",file_buf);
 
+                        //找到传输目标
+                        int destination_fd = 0;
+                        list_for_each(pos, &head->list)
+                        {
+                            tmp = list_entry(pos, struct client, list);
+                            if(strcmp(tmp->username,name_buf) ==0 )
+                            {
+                                destination_fd = tmp->accept_fd;
+                            }
+                        }
 
+                        	/* 接收转发文件 */
+                        int r, w;
+                        int nr = 0;
+                        char r_buf[100] = {0};
+                        while(1)
+                        {
+                            bzero(r_buf,100);
+                            r = read(socket_fd, r_buf, sizeof(r_buf));
+                            if(r == 0)
+                            {
+                                break;
+                            }
+                            nr += r;
+                            printf("read() %d byte\n", nr);
+                            
+                            w = write(destination_fd, r_buf, r);
+                            if(w == -1)
+                            {
+                                perror("write() failed");
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -294,19 +325,29 @@ int main(int argc, char **argv)
                             break;
                         name_buf[i] = msg[i];
                     }
+                    bzero(r_msg,100);
+                    sprintf(r_msg,"%s",name_buf);
+                    printf("%s....\n",   name_buf);
 
-                    list_for_each(pos, &head->list)
+
+                    unsigned short port = 0;
+                    
+                    CLIENT p;
+                    struct list_head *q;
+                   
+                    list_for_each(q, &(head->list))
                     {
-                        tmp = list_entry(pos, struct client, list);
-                        if(tmp->username == name_buf)
+                        p = list_entry(q, Client, list);
+                        if(strcmp(p->username,name_buf) == 0)
                         {
-                            char buf[100] = {0};
-                            sprintf(buf,"%s-->%d:%s",tmp->ip,tmp->port,msg);
-                            write(tmp->accept_fd, buf, strlen(buf));
-                            return true;
+                            printf("%s\n",p->username);
+                            port = p->port;
+                            break;
                         }
+                        
                     }
-					unsigned short port = atoi(msg);
+                    
+					
 					if(!sen_msg(str+1, port))//str+1表示去除端口号
 					{
 						printf("%u is not found\n", port);//没有找到端口号，打印错误
@@ -316,11 +357,10 @@ int main(int argc, char **argv)
                 if(strncmp(msg, "group", 5) == 0)//实现群聊(未完成)
                 {
                     // 发送组播数据
-                    char buf[10] = {0};
-                    bzero(buf,10);
-                    printf("to recv:");
-                    scanf("%s",buf);
-                    sendto(socket_group_fd,buf,10,0,(struct sockaddr *)&recv_group_addr,sizeof(recv_group_addr));
+                    char buf[100] = {0};
+                    bzero(buf,100);
+                    read(socket_fd,buf,100);
+                    sendto(socket_group_fd,buf,100,0,(struct sockaddr *)&recv_group_addr,sizeof(recv_group_addr));
                 }
 
 			}

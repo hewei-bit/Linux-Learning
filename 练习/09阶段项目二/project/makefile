@@ -1,5 +1,5 @@
 
-vpath %.c = src/client/
+vpath %.c = src/client/:src/
 vpath %.o = bin/
 vpath %.h = include/
 

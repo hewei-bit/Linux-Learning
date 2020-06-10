@@ -10,7 +10,6 @@
 
 CLIENT client_head = NULL;
 
-
 //线程例程
 
 /* 接收用户上下线提醒 */
@@ -50,13 +49,75 @@ void *receive_group_msg(void *arg)
 /* 接受普通消息 */
 void *receive_msg(void *arg)
 {
-
+	int socket_fd = (int)arg;
+	fd_set set;
+	FD_ZERO(&set);
+	int maxfd = socket_fd;
+	char r_msg[100] = {0};
+	while (1)
+	{
+		/* 将socket_fd和STDIN_FILENO加入文件描述符集合 */
+		FD_SET(socket_fd, &set);
+		FD_SET(STDIN_FILENO, &set);
+		maxfd = maxfd > STDIN_FILENO ? maxfd : STDIN_FILENO;
+		/* 检测文件描述符是否有动作 */
+		select(maxfd+1, &set, NULL, NULL, NULL);
+		if(FD_ISSET(socket_fd, &set))//有消息来了
+		{
+			bzero(r_msg, 100);
+			read(socket_fd, r_msg, sizeof(r_msg));
+			printf("%s", r_msg);
+		}	
+	}
 }
 
 /* 接收文件 */
 void *receive_file(void *arg)
 {
-
+	int socket_fd = (int)arg;
+	char r_msg[100] = {0};
+	if(strncmp(r_msg, "file", 4) == 0)//文件传输(未完成)
+	{
+		
+			/* 接收文件名 */
+		char filename[10] = {0};
+		int r_size = read(socket_fd, filename, 10);
+		printf("r_size:%d\n", r_size);
+		printf("filename:%s\n", filename);
+		
+		int file_fd = open(filename, O_RDWR|O_CREAT, 0777);
+		if(file_fd == -1)
+		{
+			perror("open() failed:");
+			return (void *)-1;
+		}
+		printf("open() %s success\n",filename);
+		
+		
+		/* 接收文件 */
+		int r, w;
+		int nr = 0;
+		char r_buf[100] = {0};
+		while(1)
+		{
+			bzero(r_buf,100);
+			r = read(socket_fd, r_buf, sizeof(r_buf));
+			if(r == 0)
+			{
+				break;
+			}
+			nr += r;
+			printf("read() %d byte\n", nr);
+			
+			w = write(file_fd, r_buf, r);
+			if(w == -1)
+			{
+				perror("write() failed");
+				return (void *)-1;
+			}
+			
+		}
+	}
 }
 
 /* 添加用户列表*/
@@ -104,17 +165,10 @@ int main()
     thread_pool *pool = malloc(sizeof(thread_pool));
     init_pool(pool, 5);
     
-    // 2, 投入 5 个任务
-    // printf("throwing 4 tasks...\n");
+    
 	
-
-	// 2.3.接收普通消息
-    // add_task(pool, receive_msg, (void *)(rand()%10));
-	// 2.4.接收文件
-    // add_task(pool, receive_file, (void *)(rand()%10));
 	// 2.5.接受新用户并加入链表
-	// add_task(pool, add_client_list, (void *)(rand()%10));
-
+// add_task(pool, add_client_list, (void *)(rand()%10));
 
 	// 从user.txt中读取用户和密码
 	ReadUserFromFile(user_head);
@@ -145,7 +199,7 @@ int main()
 						if(socket_fd == -1)
 						{
 							perror("socket() failed:");
-							return -1;
+							break;
 						}
 						printf("socket() is success!\n");
 						maxfd = socket_fd;
@@ -167,11 +221,11 @@ int main()
 						if(connect_ret == -1)
 						{
 							perror("connect() failed:");
-							return -1;
+							break;
 						}
 						printf("connect() is success!\n");
 
-						/* 广播专用 */
+						// /* 广播专用 */
 						// /* 创建 套接字 */
 						// int socket_udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
 						// if(socket_udp_fd == -1)
@@ -194,12 +248,11 @@ int main()
 						// }
 						// printf("bind sucess\n");
 						
-						// // 添加接收广播的线程
-    					// add_task(pool, receive_broadcast, (void *)socket_udp_fd);
+
 						
 
-						/*  实现组播*/
-						/* 创建 套接字 */
+						// /*  实现组播*/
+						// /* 创建 套接字 */
 						// int socket_group_fd = socket(AF_INET, SOCK_DGRAM, 0);
 						// if(socket_group_fd == -1)
 						// {
@@ -223,7 +276,7 @@ int main()
 						// server_group_addr.sin_family = AF_INET;
 						// server_group_addr.sin_port = htons(50004);
 						// server_group_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-						// int ret = bind(socket_group_fd, (struct sockaddr *)&server_group_addr, sizeof(server_group_addr));
+						// ret = bind(socket_group_fd, (struct sockaddr *)&server_group_addr, sizeof(server_group_addr));
 						// if(ret == -1)
 						// {
 						// 	perror("bind");
@@ -231,15 +284,24 @@ int main()
 						// }
 						// printf("bind sucess\n");
 
-						// // 2.2.接收群聊消息
-						// add_task(pool, receive_group_msg, (void *)socket_group_fd);
-
-
 
 						// 通知服务器
 						bzero(w_msg, 100);
 						sprintf(w_msg,"first time[%s]进入了聊天系统",username);
+						printf("%s\n",w_msg);
 						write(socket_fd, w_msg, strlen(w_msg));
+
+						// 2, 投入 5 个任务
+    					printf("throwing 4 tasks...\n");
+
+						// // 2.1添加接收广播的线程
+    					// add_task(pool, receive_broadcast, (void *)socket_udp_fd);
+						// // 2.2.接收群聊消息
+						// add_task(pool, receive_group_msg, (void *)socket_group_fd);
+						// // 2.3.接收普通消息
+						add_task(pool, receive_msg, (void *)socket_fd);
+						// 2.4.接收文件
+						add_task(pool, receive_file, (void *)socket_fd);
 
 						/*  下一阶段*/
 						while(1)
@@ -250,94 +312,43 @@ int main()
 							switch (num_1)
 							{
 								case 1:/* 显示所有连接对象 */
-									printf("输入任意字符串即退出\n");
+									// printf("输入任意字符串即退出\n");
 									bzero(w_msg,100);
 									sprintf(w_msg,"%s","show_all");
+									printf("%s\n",w_msg);
 									write(socket_fd,w_msg,strlen(w_msg));
-									while (1)
-									{
-										/* 将socket_fd和STDIN_FILENO加入文件描述符集合 */
-										FD_SET(socket_fd, &set);
-										FD_SET(STDIN_FILENO, &set);
-										maxfd = maxfd > STDIN_FILENO ? maxfd : STDIN_FILENO;
-										/* 检测文件描述符是否有动作 */
-										select(maxfd+1, &set, NULL, NULL, NULL);
-										if(FD_ISSET(socket_fd, &set))//有消息来了
-										{
-											bzero(r_msg, 100);
-											read(socket_fd, r_msg, sizeof(r_msg));
-											printf("%s", r_msg);
-										}	
-										if(FD_ISSET(STDIN_FILENO,&set))
-										{
-											break;
-										}
-									}
 									break;
 
 								case 2:/* 私聊*/
-									printf("请输入你需要通信的对象和信息:(username:msg)\n");
+									printf("请输入你需要通信的对象和信息:\n");
+									printf("请以username:msg的形式发送\n");
 									while(1)
 									{
-										/* 将socket_fd和STDIN_FILENO加入文件描述符集合 */
-										FD_SET(socket_fd, &set);
-										FD_SET(STDIN_FILENO, &set);
-										maxfd = maxfd > STDIN_FILENO ? maxfd : STDIN_FILENO;
-										/* 检测文件描述符是否有动作 */
-										select(maxfd+1, &set, NULL, NULL, NULL);
-
-										if(FD_ISSET(STDIN_FILENO, &set))//输入消息
-										{
-											bzero(w_msg, 100);
-											fgets(w_msg, 100, stdin);
-											write(socket_fd, w_msg, strlen(w_msg));
-											if(strncmp(w_msg, "exit", 4) == 0)
-												break;
-										}
-
-										if(FD_ISSET(socket_fd, &set))//有消息来了
-										{
-											bzero(r_msg, 100);
-											read(socket_fd, r_msg, sizeof(r_msg));
-											printf("%s\n", r_msg);
-										}		
+										bzero(w_msg, 100);
+										fgets(w_msg, 100, stdin);
+										write(socket_fd, w_msg, strlen(w_msg));
+										if(strncmp(w_msg, "exit", 4) == 0)
+											break;
+										printf("输入exit退出聊天框\n");
 									}
-									/* 关闭套接字文件描述符 */
-									shutdown(socket_fd,2);	
 									break;
 
 									case 3:/* 群聊*/
-										printf("请输入你需要通信的对象:\n");
-
+										printf("请输入你需要通信的组:\n");
+										printf("请输入你要发送的信息\n");
 										while(1)
 										{
-											/* 将socket_fd和STDIN_FILENO加入文件描述符集合 */
-											FD_SET(socket_fd, &set);
-											FD_SET(STDIN_FILENO, &set);
-											maxfd = maxfd > STDIN_FILENO ? maxfd : STDIN_FILENO;
-											/* 检测文件描述符是否有动作 */
-											select(maxfd+1, &set, NULL, NULL, NULL);
+											
+											// 发送组播数据
+											bzero(r_msg, 100);
+											fgets(r_msg, 100, stdin);
+											sprintf(w_msg,"group%s",r_msg);
+											printf("%s\n",w_msg);
+        									write(socket_fd,w_msg,100);
+											if(strncmp(r_msg, "exit", 4) == 0)
+												break;
 
-											if(FD_ISSET(STDIN_FILENO, &set))//输入消息
-											{
-												bzero(w_msg, 100);
-												fgets(w_msg, 100, stdin);
-												write(socket_fd, w_msg, strlen(w_msg));
-												if(strncmp(w_msg, "exit", 4) == 0)
-													break;
-											}
-
-											if(FD_ISSET(socket_fd, &set))//有消息来了
-											{
-												bzero(r_msg, 100);
-												read(socket_fd, r_msg, sizeof(r_msg));
-												printf("read:%s\n", r_msg);
-											}		
 										}
-
-										/* 关闭套接字文件描述符 */
-										shutdown(socket_fd,2);	
-										
 										break;
 
 								case 4:/* 传文件*/
@@ -348,7 +359,7 @@ int main()
 									scanf("%s",name_buf);
 									printf("请输入传输的文件名:\n");
 									scanf("%s",file_name);
-									sprintf(w_msg,"file-%s-%s",name_buf,file_name);
+									sprintf(w_msg,"file-%s-%s\r",name_buf,file_name);
 									
 									// 发送文件名
 									write(socket_fd,w_msg,strlen(w_msg));
@@ -368,19 +379,29 @@ int main()
 
 									while(1)
 									{
-
+										r = read(file_fd, r_buf, sizeof(r_buf));
+										if(r == 0)
+										{
+											break;
+										}
+										w = write(socket_fd, r_buf, r);
+										
+										nw += w;
+										printf("write() %d byte\n", nw);
 									}
-
-									/* 关闭套接字文件描述符 */
-									shutdown(socket_fd,2);	
 									break;
 
 								case 5:/* 退出 */
 									bzero(w_msg, 100);
-									sprintf(w_msg,"%s","exit");
+
+									sprintf(w_msg,"%s","goodbye\n");
+									printf("%s",w_msg);
 									write(socket_fd, w_msg, strlen(w_msg));
-									shutdown(socket_fd,2);
+									 //  删除 2 条线程
+    								printf("remove 5 threads from the pool, ""current thread number: %d\n",remove_thread(pool, 6));
 									destroy_pool(pool);
+									shutdown(socket_fd,2);
+									
 									return 0;
 
 								default:
@@ -420,6 +441,8 @@ int main()
 
 			case 5:/* 退出 */
 				// 销毁线程池
+				 // 6, 删除 3 条线程
+    			printf("remove 5 threads from the pool, ""current thread number: %d\n",remove_thread(pool, 2));
     			destroy_pool(pool);
 				return 0;
 
@@ -428,6 +451,8 @@ int main()
 		}
 	}
 	// 销毁线程池
+	 // 6, 删除 3 条线程
+    printf("remove 2 threads from the pool, ""current thread number: %d\n",remove_thread(pool, 2));
     destroy_pool(pool);
 	return 0;
 }
